@@ -70,11 +70,11 @@ class MainActivity : Activity() {
         val btnRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         val startBtn = Button(this).apply {
             text = "Boshlash"
-            setOnClickListener { onStart() }
+            setOnClickListener { startClicked() }
         }
         val stopBtn = Button(this).apply {
             text = "To'xtatish"
-            setOnClickListener { onStop() }
+            setOnClickListener { stopClicked() }
         }
         btnRow.addView(startBtn, LinearLayout.LayoutParams(0, wrap, 1f))
         btnRow.addView(stopBtn, LinearLayout.LayoutParams(0, wrap, 1f))
@@ -193,7 +193,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun onStart() {
+    private fun startClicked() {
         if (SmsState.running) return
         if (SmsState.contacts.none { it.valid }) {
             toast("Avval Excel faylni yuklang")
@@ -204,41 +204,3 @@ class MainActivity : Activity() {
             toast("Xabar matnini yozing")
             return
         }
-        SmsState.message = msg
-        SmsState.pauseSec = (pauseBox.text.toString().toIntOrNull() ?: 5).coerceIn(1, 120)
-
-        val perms = ArrayList<String>()
-        if (checkSelfPermission(Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            perms.add(Manifest.permission.SEND_SMS)
-        }
-        if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            perms.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        if (perms.isNotEmpty()) requestPermissions(perms.toTypedArray(), REQ_PERM) else startSending()
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQ_PERM) {
-            if (checkSelfPermission(Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
-                startSending()
-            } else {
-                toast("SMS yuborish uchun ruxsat kerak")
-            }
-        }
-    }
-
-    private fun startSending() {
-        SmsState.running = true
-        startForegroundService(Intent(this, SendService::class.java))
-        refresh()
-    }
-
-    private fun onStop() {
-        if (!SmsState.running) return
-        startService(Intent(this, SendService::class.java).setAction(SendService.ACTION_STOP))
-        toast("To'xtatilmoqda...")
-    }
-}
